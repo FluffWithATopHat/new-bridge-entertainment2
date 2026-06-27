@@ -1,0 +1,17 @@
+{
+  "name": "new-bridge-entertainment2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Online claw machine control website for Raspberry Pi + Arduino",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "serialport": "^12.0.0"
+  }
+}
