@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New Bridge Entertainment</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="camera">
+        <h1>New Bridge Entertainment</h1>
+        <div id="cameraWrap" class="camera-frame">
+          <p id="cameraNotice">Set CAMERA_STREAM_URL on the server to show live feed.</p>
+        </div>
+      </section>
+
+      <section class="controls">
+        <div class="session-row">
+          <input id="playerName" placeholder="Player name" maxlength="40" />
+          <button id="startBtn">Start Turn</button>
+          <button id="endBtn" disabled>End</button>
+        </div>
+        <p id="statusText">Loading status...</p>
+
+        <div class="pad">
+          <button data-command="forward">↑</button>
+          <div class="row">
+            <button data-command="left">←</button>
+            <button data-command="drop" class="drop">DROP</button>
+            <button data-command="right">→</button>
+          </div>
+          <button data-command="back">↓</button>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
