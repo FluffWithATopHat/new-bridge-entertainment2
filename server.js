@@ -23,17 +23,64 @@ const COMMANDS = {
 
 let serial;
 let serialReady = false;
+const commandQueue = [];
+let queueBusy = false;
+
+const flushQueue = (message) => {
+  while (commandQueue.length > 0) {
+    const queued = commandQueue.shift();
+    queued.reject(new Error(message));
+  }
+};
+
+const processQueue = () => {
+  if (queueBusy || commandQueue.length === 0 || !serial || !serialReady) {
+    return;
+  }
+
+  queueBusy = true;
+  const queued = commandQueue.shift();
+
+  serial.write(`${queued.command}\n`, (writeError) => {
+    if (writeError) {
+      queueBusy = false;
+      queued.reject(writeError);
+      processQueue();
+      return;
+    }
+
+    serial.drain((drainError) => {
+      queueBusy = false;
+      if (drainError) {
+        queued.reject(drainError);
+      } else {
+        queued.resolve();
+      }
+      processQueue();
+    });
+  });
+};
+
+const enqueueCommand = (command) =>
+  new Promise((resolve, reject) => {
+    commandQueue.push({ command, resolve, reject });
+    processQueue();
+  });
+
 try {
   serial = new SerialPort({ path: SERIAL_PORT, baudRate: SERIAL_BAUD_RATE });
   serial.on("open", () => {
     serialReady = true;
     console.log(`Serial connected: ${SERIAL_PORT} @ ${SERIAL_BAUD_RATE}`);
+    processQueue();
   });
   serial.on("close", () => {
     serialReady = false;
+    flushQueue("Serial connection closed");
   });
   serial.on("error", (error) => {
     serialReady = false;
+    flushQueue(`Serial error: ${error.message}`);
     console.error("Serial error:", error.message);
   });
 } catch (error) {
@@ -105,7 +152,7 @@ app.post("/api/session/end", requireActiveSession, (req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/api/command", requireActiveSession, (req, res) => {
+app.post("/api/command", requireActiveSession, async (req, res) => {
   const command = COMMANDS[req.body?.command];
   if (!command) {
     return res.status(400).json({ error: "Unknown command" });
@@ -114,12 +161,12 @@ app.post("/api/command", requireActiveSession, (req, res) => {
     return res.status(503).json({ error: "Serial connection not ready" });
   }
 
-  serial.write(`${command}\n`, (error) => {
-    if (error) {
-      return res.status(500).json({ error: "Failed to send command" });
-    }
+  try {
+    await enqueueCommand(command);
     return res.json({ ok: true, command });
-  });
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to send command" });
+  }
 });
 
 app.listen(PORT, () => {

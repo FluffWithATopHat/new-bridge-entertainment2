@@ -1,4 +1,5 @@
 let sessionToken = null;
+const IMAGE_URL_PATTERN = /\.(jpg|jpeg|png|mjpeg)(\?|$)/i;
 
 const statusText = document.getElementById("statusText");
 const startBtn = document.getElementById("startBtn");
@@ -30,7 +31,7 @@ const updateStatus = async () => {
   if (status.cameraStreamUrl && !cameraWrap.dataset.loaded) {
     cameraWrap.dataset.loaded = "true";
     cameraWrap.innerHTML = "";
-    if (/\.(jpg|jpeg|png|mjpeg)(\?|$)/i.test(status.cameraStreamUrl)) {
+    if (IMAGE_URL_PATTERN.test(status.cameraStreamUrl)) {
       const img = document.createElement("img");
       img.src = status.cameraStreamUrl;
       img.alt = "Live claw machine feed";
@@ -107,7 +108,9 @@ commandButtons.forEach((button) => {
       body: JSON.stringify({ command: button.dataset.command })
     });
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
+      const payload = await response
+        .json()
+        .catch(() => ({ error: "Command failed: Unable to parse server response" }));
       alert(payload.error || "Command failed");
       if (response.status === 403) {
         sessionToken = null;
